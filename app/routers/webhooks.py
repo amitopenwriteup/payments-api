@@ -8,8 +8,8 @@ router = APIRouter()
 class WebhookPayload(BaseModel):
     event: str
     amount: float = 0.0
-    metadata: dict = {}
-
+    #metadata: dict = {}
+    metadata: dict[str, object] = {}
 
 class WebhookResponse(BaseModel):
     status: str
