@@ -1,0 +1,31 @@
+# FAULT: maxUnavailable: 100% replaces all pods at once.
+# FAULT: no AnalysisTemplate — bad canaries are never detected.
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: payments-api
+  namespace: staging
+spec:
+  replicas: 4
+  strategy:
+    canary:
+      maxUnavailable: 100%     # FAULT: all pods replaced simultaneously
+      steps:
+        - setWeight: 20
+        - pause:
+            duration: 2m
+        - setWeight: 100
+      # FAULT: no analysis block — canary is never evaluated
+  selector:
+    matchLabels:
+      app: payments-api
+  template:
+    metadata:
+      labels:
+        app: payments-api
+    spec:
+      containers:
+        - name: payments-api
+          image: payments-api:latest
+          ports:
+            - containerPort: 8000

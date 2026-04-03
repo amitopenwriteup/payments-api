@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: error-rate-check
+  namespace: staging
+spec:
+  metrics:
+    - name: http-error-rate
+      interval: 30s
+      failureLimit: 2
+      successCondition: "result[0] < 0.05"
+      provider:
+        prometheus:
+          address: http://prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            sum(
+              rate(
+                http_requests_total{
+                  job="payments-api",
+                  namespace="staging",
+                  status=~"5.."
+                }[1m]
+              )
+            )
+            /
+            sum(
+              rate(
+                http_requests_total{
+                  job="payments-api",
+                  namespace="staging"
+                }[1m]
+              )
+            )

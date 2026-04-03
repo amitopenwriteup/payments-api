@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+        # FAULT: this will succeed (pip resolves ranges) but app import fails at runtime
+
+      - name: Lint
+        run: ruff check app/ tests/
+
+      - name: Type-check
+        run: mypy app/
+
+      # Part 3: replace the step below with test selection
+      - name: Run tests
+        run: pytest tests/ -v --tb=short --junitxml=/tmp/test_results.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: /tmp/test_results.xml

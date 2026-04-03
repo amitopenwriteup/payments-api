@@ -1,0 +1,51 @@
+name: AI Code Review Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ai-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Anthropic SDK
+        run: pip install anthropic
+
+      - name: Extract PR diff
+        run: |
+          git diff origin/${{ github.base_ref }}...HEAD \
+            -- '*.py' > /tmp/pr_diff.txt
+          echo "Diff size: $(wc -l < /tmp/pr_diff.txt) lines"
+
+      - name: Run AI code review
+        id: ai-review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: python .github/scripts/llm_review.py
+
+      - name: Post review summary to PR
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f /tmp/review_summary.txt ]; then
+            gh pr comment ${{ github.event.pull_request.number }} \
+              --body-file /tmp/review_summary.txt
+          fi

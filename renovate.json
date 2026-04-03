@@ -1,0 +1,35 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:base"],
+  "dependencyDashboard": true,
+  "packageRules": [
+    {
+      "description": "Group FastAPI ecosystem — these packages share API surface and must upgrade together",
+      "matchPackageNames": ["fastapi", "httpx", "starlette", "anyio"],
+      "groupName": "fastapi ecosystem",
+      "automerge": false,
+      "addLabels": ["dependencies", "needs-review"],
+      "stabilityDays": 3
+    },
+    {
+      "description": "Auto-merge safe patch updates for test/lint tooling",
+      "matchPackageNames": ["pytest", "pytest-asyncio", "black", "ruff", "mypy"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "Always require human review for major version bumps",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "addLabels": ["major-update", "needs-human-approval"]
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security", "priority-high"]
+  },
+  "semanticCommits": "enabled",
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2
+}
